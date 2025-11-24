@@ -1,70 +1,35 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Analizador de Funciones Racionales</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Analizador de funciones racionales</title>
 
-  <!-- Chart.js para la gráfica -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- math.js para evaluaciones seguras -->
-  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-  <style>
-    :root{
-      --bg:#f4f6fb;
-      --card:#ffffff;
-      --accent:#2563eb;
-      --muted:#6b7280;
-      --success:#059669;
-      --danger:#ef4444;
-    }
-    body{
-      margin:0;
-      font-family:Inter,Segoe UI,Roboto,Arial;
-      background:var(--bg);
-      color:#111827;
-      padding:22px;
-    }
-    .wrap{
-      max-width:1000px;
-      margin:18px auto;
-    }
-    .card{
-      background:var(--card);
-      border-radius:12px;
-      box-shadow:0 6px 18px rgba(16,24,40,0.06);
-      padding:20px;
-      margin-bottom:14px;
-    }
-    h1{margin:0 0 8px 0;font-size:20px}
-    .example{
-      background:#eef2ff;border-left:4px solid var(--accent);
-      padding:10px;border-radius:8px;margin-bottom:14px;color:#0f172a;
-    }
-    .input-row{display:flex;gap:10px;align-items:center}
-    #functionInput{
-      flex:1;padding:12px;border-radius:8px;border:1px solid #e6edf8;font-size:15px;
-      outline:none;
-    }
-    button{
-      background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;
-      cursor:pointer;font-weight:600;
-    }
-    button:active{transform:translateY(1px)}
-    .guide{background:#f9fafb;border-radius:8px;padding:12px;border:1px solid #eee;margin-top:12px;color:var(--muted)}
-    .results{display:grid;grid-template-columns:1fr 380px;gap:14px;margin-top:14px}
-    .block{background:#fff;border-radius:10px;padding:12px;border:1px solid #f0f0f0;min-height:80px}
-    .small{font-size:13px;color:var(--muted)}
-    table{width:100%;border-collapse:collapse}
-    td,th{padding:6px 8px;border-bottom:1px dashed #eee;font-size:14px}
-    .danger{color:var(--danger)}
-    .asymptote{color:#9ca3af;font-size:13px}
-    canvas{background:#ffffff;border-radius:8px;padding:6px}
-    .note{font-size:13px;color:var(--muted);margin-top:8px}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .chip{background:#f3f4f6;padding:6px 8px;border-radius:999px;font-size:13px;color:#374151;border:1px solid #e5e7eb}
-  </style>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#fff; --accent:#2563eb; --muted:#6b7280; --danger:#ef4444;
+  }
+  body{ margin:0; font-family:Inter, Roboto, Arial, sans-serif; background:var(--bg); color:#111827; padding:20px; }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  .card{ background:var(--card); border-radius:10px; padding:16px; box-shadow:0 6px 18px rgba(16,24,40,0.06); }
+  h1{ margin:0 0 8px 0; font-size:20px; }
+  .example{ background:#eef2ff; border-left:4px solid var(--accent); padding:10px; border-radius:6px; margin-bottom:12px; color:#0f172a; }
+  .row{ display:flex; gap:12px; align-items:center; }
+  input[type="text"]{ flex:1; padding:10px 12px; border-radius:8px; border:1px solid #e6edf8; font-size:15px; }
+  button{ background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
+  .main-grid{ display:grid; grid-template-columns: 1fr 460px; gap:14px; margin-top:14px; align-items:start; }
+  .small{ font-size:13px; color:var(--muted); }
+  table{ width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td{ padding:6px 8px; border-bottom:1px dashed #eee; text-align:center; font-size:14px; }
+  .danger{ color:var(--danger); }
+  canvas{ width:100% !important; height:420px !important; background:#fff; border-radius:8px; padding:6px; }
+  .guide{ margin-top:12px; background:#f9fafb; padding:12px; border-radius:8px; border:1px solid #eee; color:var(--muted); }
+  .meta { margin-top:8px; font-size:14px; }
+  .math { font-family: "Times New Roman", Times, serif; }
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -72,618 +37,419 @@
       <h1>Analizador de funciones racionales</h1>
       <div class="example"><strong>Ejemplo:</strong> <span class="small">f(x) = (x^2 - 4) / (x - 2)</span></div>
 
-      <div class="input-row">
-        <input id="functionInput" placeholder="Escribe la función como (numerador)/(denominador). Ej: (2*x^2 - 5*x + 3)/(x - 1)" autocomplete="off" />
-        <button id="analyzeBtn">Analizar</button>
+      <div class="row">
+        <input id="fnInput" type="text" placeholder="(numerador)/(denominador) — Ej: (2*x^2 - 5*x + 3)/(x - 1)" />
+        <button id="btnAnalyze">Analizar</button>
       </div>
 
       <div class="guide">
-        <strong>Cómo ingresar la función:</strong>
+        <strong>Cómo ingresar:</strong>
         <ul>
           <li>Usa <code>x</code> como variable.</li>
-          <li>Escribe potencias como <code>x^2</code>, <code>x^3</code>.</li>
-          <li>Multiplicación explícita: <code>2*x</code> (no escribir 2x).</li>
-          <li>Debes ingresar una fracción en formato <code>(numerador)/(denominador)</code> si la función es racional.</li>
-          <li>Soportado: coeficientes reales, constantes, potencias. No se permiten funciones trig/exp complejas en la versión polinómica.</li>
+          <li>Potencias: <code>x^2</code>, multiplicación explícita: <code>2*x</code>.</li>
+          <li>Formato recomendado: <code>(numerador)/(denominador)</code>. Si no es fracción, escribe el polinomio.</li>
         </ul>
       </div>
     </div>
 
-    <div class="results">
-      <div class="card block" style="min-height:320px;">
-        <h3>Resultados</h3>
-        <div id="summaryArea" class="small note">Ingresa una función y pulsa <strong>Analizar</strong>.</div>
+    <div class="main-grid">
+      <div class="card">
+        <div id="resultsArea">
+          <div id="intro" class="small meta">Introduce una función y pulsa <strong>Analizar</strong>.</div>
 
-        <div id="details" style="margin-top:10px;display:none">
-          <p><strong>Simplificación:</strong> <span id="simplified"></span></p>
-          <p><strong>Dominio:</strong> <span id="domain"></span></p>
-          <p><strong>Asíntotas verticales:</strong> <span id="vertAsym"></span></p>
-          <p><strong>Asíntota horizontal / oblicua:</strong> <span id="horizAsym"></span></p>
-          <p><strong>Huecos:</strong> <span id="holes"></span></p>
+          <div id="details" style="display:none; margin-top:10px;">
+            <p><strong>Simplificación:</strong> <span id="simplified"></span></p>
+            <p><strong>Dominio (texto):</strong> <span id="domainText"></span></p>
+            <p><strong>Dominio (notación):</strong> <span id="domainMath" class="math"></span></p>
+            <p><strong>Asíntotas verticales:</strong> <span id="vertAsym"></span></p>
+            <p><strong>Asíntota horiz./oblicua:</strong> <span id="horizAsym"></span></p>
+            <p><strong>Huecos:</strong> <span id="holes"></span></p>
+            <div id="rangeWrap" style="display:none;">
+              <p><strong>Rango (notación):</strong> <span id="rangeMath" class="math"></span></p>
+              <p><strong>Rango (texto):</strong> <span id="rangeText"></span></p>
+            </div>
 
-          <div style="margin-top:10px;">
-            <strong>Tabla de valores (muestra):</strong>
-            <div id="tableWrap" style="margin-top:6px"></div>
+            <div style="margin-top:8px;">
+              <strong>Tabla</strong>
+              <div id="tableWrap" class="small"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="card block">
-        <h3>Gráfica</h3>
-        <canvas id="chart" height="300"></canvas>
-        <div id="chartNote" class="note">La gráfica evita puntos singulares y marca huecos con un punto vacío.</div>
+      <div class="card">
+        <canvas id="chartCanvas"></canvas>
       </div>
     </div>
   </div>
 
 <script>
 (() => {
-  // helpers
   const $ = id => document.getElementById(id);
   const math = window.math;
 
-  // Parse top-level fraction: split on "/" not inside parentheses
-  function splitFraction(input) {
-    let s = input.trim();
-    // if the whole input is like f(x)=... remove "f(x)="
-    s = s.replace(/^\s*f\s*\(\s*x\s*\)\s*=\s*/i, '');
-    // remove outer spaces
-    // find slash at top level
-    let depth = 0;
-    for (let i=0;i<s.length;i++){
-      const ch = s[i];
-      if (ch === '(') depth++;
-      if (ch === ')') depth--;
-      if (ch === '/' && depth === 0) {
-        const left = s.slice(0,i).trim();
-        const right = s.slice(i+1).trim();
-        return [left, right];
+  function r2(n){ if(typeof n!=='number' || !isFinite(n)) return n; return Math.round(n*100)/100; }
+  function fmt(n){ if(n===null||n===undefined) return '—'; if(!isFinite(n)) return '—'; if(Math.abs(n-Math.round(n))<1e-8) return String(Math.round(n)); return r2(n).toString(); }
+
+  // split (numerator)/(denominator) at top level
+  function splitFrac(s){
+    let str = s.trim().replace(/^\s*f\s*\(\s*x\s*\)\s*=\s*/i,'');
+    let depth=0;
+    for(let i=0;i<str.length;i++){
+      const ch=str[i];
+      if(ch==='(') depth++;
+      if(ch===')') depth--;
+      if(ch==='/' && depth===0){
+        return [str.slice(0,i).trim(), str.slice(i+1).trim()];
       }
     }
-    return null;
+    return [str.trim(), '1'];
   }
 
-  // normalize caret ^ to ** for math.js evaluation, but we'll parse polynomials manually
-  function normalizeExpr(str){
-    return str.replace(/\^/g, '**').replace(/\s+/g,'');
-  }
-
-  // Parse polynomial string into coefficient array: coeffs[i] is coef for x^i
-  // Supports terms like: 3*x^2, -x^3, 4, 2.5*x
-  function parsePolynomial(polyStr) {
-    // remove outer parentheses
-    let s = polyStr.trim();
-    if (s.startsWith('(') && s.endsWith(')')) {
-      s = s.slice(1,-1);
+  // Evaluate expression safely with mathjs
+  function compileExpr(exprStr){
+    try{
+      const node = math.parse(exprStr.replace(/\^/g,'**'));
+      return node.compile();
+    }catch(e){
+      return null;
     }
-    // replace unary plus for easier splitting
-    s = s.replace(/\s+/g,'');
-    // insert + before - for split, but preserve leading -
-    s = s.replace(/^\-/,'~'); // mark leading negative
-    s = s.replace(/\+/g,'+');
-    s = s.replace(/\-/g,'+-');
-    s = s.replace(/~/,'-');
-    const terms = s.split('+').filter(Boolean);
-    let coeffs = {};
-    for (let t of terms) {
-      // term examples: 2*x^2  -x^2  4  3*x
-      let coef = 1;
-      let pow = 0;
-      // handle sign
-      if (t === '-') { coef = -1; t = '1'; }
-      // find x
-      if (t.includes('x')) {
-        // split coef and power
-        const parts = t.split('x');
-        let cpart = parts[0];
-        if (cpart === '' || cpart === '+') coef = 1;
-        else if (cpart === '-') coef = -1;
-        else {
-          // remove * if present
-          cpart = cpart.replace(/\*$/,'');
-          coef = parseFloat(cpart);
-          if (isNaN(coef)) return null;
+  }
+
+  // detect singular x's (where denom ~ 0) by scanning and refining
+  function findSingulars(denEval, xMin=-100, xMax=100, step=0.1){
+    const suspects = new Set();
+    for(let x=xMin; x<=xMax; x+=step){
+      const v = denEval(x);
+      if(!isFinite(v) || Math.abs(v) < 1e-6) suspects.add(Math.round(x*100)/100);
+    }
+    return Array.from(suspects).sort((a,b)=>a-b);
+  }
+
+  // adaptive sampling: subdivide interval if linear interpolation error large or steep slope
+  function adaptiveSample(fEval, a, b, fa, fb, tol=0.5, depth=0, maxDepth=12){
+    const mid = (a+b)/2;
+    const fm = fEval(mid);
+    if(!isFinite(fa) || !isFinite(fb) || !isFinite(fm)) {
+      // if any is infinite or NaN, we stop subdividing: return null to create gaps
+      return [ {x:a,y:fa}, {x:mid,y:NaN}, {x:b,y:fb} ];
+    }
+    const lin = (fa+fb)/2;
+    const err = Math.abs(fm - lin);
+    if((err < tol && depth>1) || depth>=maxDepth) {
+      return [ {x:a,y:fa}, {x:mid,y:fm}, {x:b,y:fb} ];
+    } else {
+      // subdivide
+      const left = adaptiveSample(fEval, a, mid, fa, fm, tol, depth+1, maxDepth);
+      const right = adaptiveSample(fEval, mid, b, fm, fb, tol, depth+1, maxDepth);
+      // merge, avoid duplicating mid
+      const merged = [];
+      if(left && left.length) merged.push(...left);
+      if(right && right.length) merged.push(...right.slice(1));
+      return merged;
+    }
+  }
+
+  // build dataset from adaptive sampling over [-10,10]
+  function buildDataset(fEval){
+    const segments = [];
+    const step = 1.0; // coarse segmentation across domain, refined adaptively inside
+    for(let a=-10; a<10; a+=step){
+      const b = a+step;
+      const fa = fEval(a), fb = fEval(b);
+      const seg = adaptiveSample(fEval, a, b, fa, fb, 0.6, 0, 12);
+      if(seg && seg.length){
+        // transform to arrays marking NaN for gaps
+        for(let i=0;i<seg.length;i++) {
+          segments.push(seg[i]);
         }
-        if (parts[1]) {
-          const m = parts[1].match(/\^(\d+)/);
-          if (m) pow = parseInt(m[1],10);
-          else pow = 1;
-        } else pow = 1;
       } else {
-        // constant
-        coef = parseFloat(t);
-        if (isNaN(coef)) return null;
-        pow = 0;
-      }
-      coeffs[pow] = (coeffs[pow] || 0) + coef;
-    }
-    // convert to array
-    const maxPow = Math.max(...Object.keys(coeffs).map(k=>parseInt(k,10)));
-    const arr = new Array(maxPow+1).fill(0);
-    for (let k in coeffs) arr[parseInt(k,10)] = coeffs[k];
-    // trim trailing zeros
-    while (arr.length>1 && Math.abs(arr[arr.length-1]) < 1e-12) arr.pop();
-    return arr;
-  }
-
-  // Evaluate polynomial (coeffs array) at x
-  function evalPoly(coeffs, x) {
-    let y = 0;
-    for (let i=coeffs.length-1;i>=0;i--){
-      y = y * x + coeffs[i];
-    }
-    return y;
-  }
-
-  // Degree
-  function degree(coeffs){ return coeffs.length-1; }
-
-  // Polynomial long division: returns {quotient, remainder}
-  function polyDiv(num, den) {
-    // clone arrays
-    let a = num.slice();
-    const b = den.slice();
-    const n = a.length - 1;
-    const m = b.length - 1;
-    if (b.length === 0) return null;
-    if (n < m) return { quotient: [0], remainder: a };
-    let q = new Array(n - m + 1).fill(0);
-    for (let k = n - m; k>=0; k--) {
-      const coeff = a[m + k] / b[m];
-      q[k] = coeff;
-      for (let j = 0; j<=m; j++){
-        a[j + k] -= coeff * b[j];
+        // create gap
+        segments.push({x:a,y:NaN}, {x:b,y:NaN});
       }
     }
-    // trim remainder
-    while (a.length>0 && Math.abs(a[a.length-1]) < 1e-10) a.pop();
-    if (a.length===0) a = [0];
-    while (q.length>1 && Math.abs(q[q.length-1]) < 1e-12) q.pop();
-    return { quotient: q, remainder: a };
-  }
-
-  // Find real roots by scanning and bisection in interval [-R, R]
-  function findRealRoots(coeffs, opts={tol:1e-7, maxIter:50, scanStep:0.5, range:200}) {
-    const f = x => evalPoly(coeffs, x);
-    const roots = [];
-    const R = opts.range || 200;
-    const step = opts.scanStep || 0.5;
-    let xs = [];
-    for (let x=-R; x<=R; x+=step) xs.push(x);
-    for (let i=0;i<xs.length-1;i++){
-      const a = xs[i], b = xs[i+1];
-      const fa = f(a), fb = f(b);
-      if (isNaN(fa)||isNaN(fb)) continue;
-      if (Math.sign(fa) === 0) {
-        roots.push(a);
-      } else if (fa * fb < 0) {
-        // bisection
-        let lo = a, hi = b, flo = fa, fhi = fb;
-        for (let it=0; it<opts.maxIter; it++){
-          const mid = (lo+hi)/2;
-          const fm = f(mid);
-          if (Math.abs(fm) < opts.tol) { lo = hi = mid; break; }
-          if (flo * fm <= 0) { hi = mid; fhi = fm; }
-          else { lo = mid; flo = fm; }
-        }
-        const root = (lo+hi)/2;
-        // avoid duplicates
-        if (!roots.some(r=>Math.abs(r-root) < 1e-4)) roots.push(root);
-      }
+    // compress: produce arrays xs, ys, inserting nulls when y is NaN
+    const xs = [], ys = [];
+    for(const p of segments){
+      xs.push(p.x);
+      ys.push((isFinite(p.y) ? p.y : null));
     }
-    // Also check for multiplicity: try refining around found roots
-    return roots.sort((a,b)=>a-b);
+    return { xs, ys };
   }
 
-  // Synthetic division by (x - r) returning new coeffs
-  function syntheticDivide(coeffs, r) {
-    const n = coeffs.length - 1;
-    const out = new Array(n).fill(0);
-    out[n-1] = coeffs[n];
-    for (let i=n-2; i>=0; i--){
-      out[i] = coeffs[i+1] + r * out[i+1];
+  // compute range approx from finite y-values (and hide if decimals>2 or extreme)
+  function computeRangeFrom(vals){
+    const finite = vals.filter(v=>isFinite(v));
+    if(finite.length===0) return null;
+    const min = Math.min(...finite), max = Math.max(...finite);
+    // hide if any requires >2 decimals in representation
+    function needsManyDecimals(n){
+      const s = Math.abs(Math.round(n*100)/100 - n);
+      // if representation would change more than 0 -> require decimals; we only accept 2 decimals max
+      const fixed = Math.round(n*100)/100;
+      return !isFinite(n) || Math.abs(fixed - n) > 1e-6;
     }
-    const remainder = coeffs[0] + r * out[0];
-    return {quot: out, rem: remainder};
+    if(needsManyDecimals(min) || needsManyDecimals(max)) return null;
+    // hide if range is extreme
+    if(Math.abs(min) > 1e6 || Math.abs(max) > 1e6) return null;
+    return { min: Math.round(min*100)/100, max: Math.round(max*100)/100 };
   }
 
-  // Format polynomial array to string
-  function polyToString(coeffs) {
-    if (!coeffs || coeffs.length===0) return '0';
-    let parts = [];
-    for (let i=coeffs.length-1;i>=0;i--){
-      const c = coeffs[i];
-      if (Math.abs(c) < 1e-12) continue;
-      const sign = c < 0 ? '-' : (parts.length===0 ? '' : '+');
-      const mag = Math.abs(c);
-      if (i===0) parts.push(`${sign}${mag}`);
-      else if (i===1) parts.push(`${sign}${(mag===1? '' : mag+'*')}x`);
-      else parts.push(`${sign}${(mag===1? '' : mag+'*')}x^${i}`);
-    }
-    return parts.join(' ').replace(/\+\-/g,'- ');
-  }
-
-  // Build chart
+  // Chart.js instance
   let chart = null;
-  function drawChart(xs, ys, holes=[], vertAsym=[], obliqueLine=null) {
-    const ctx = $('chart');
-    const data = {
-      labels: xs,
-      datasets: [
-        {
-          label: 'f(x)',
-          data: ys,
-          showLine: true,
-          fill: false,
-          borderWidth: 2,
-          tension: 0.0,
-          pointRadius: 2,
-        }
-      ]
-    };
-    // if holes exist, add a dataset for holes
-    if (holes && holes.length>0) {
-      const holeData = xs.map((x,i)=> {
-        const found = holes.find(h=>Math.abs(h - x) < 1e-6);
-        if (found) return {x: x, y: null};
-        return null;
-      }).filter(Boolean);
-      // We'll mark holes separately using scatter (we'll compute their y by eval)
-      const holeYs = [];
-      const holeXs = [];
-      for (let h of holes) {
-        holeXs.push(h);
-        holeYs.push(null); // we'll overlay point later manually
-      }
-      // Chart.js scatter points require coordinates; we'll plot holes on top using plugin below
-      data.datasets.push({
-        label: 'Huecos',
-        data: [], // handled in plugin
-        showLine: false,
-        pointStyle: 'circle',
-        pointRadius: 6,
-        backgroundColor: 'white',
-        borderColor: 'black',
-        borderWidth:1.5,
-        type: 'scatter',
-        parsing:false,
-      });
+  function plotChart(xs, ys, holes=[], vertAsym=[], obliqueLine=null){
+    if(chart) chart.destroy();
+    const ctx = $('chartCanvas').getContext('2d');
+
+    // build dataset pairs for Chart.js (x numeric)
+    const dataPoints = [];
+    for(let i=0;i<xs.length;i++){
+      const x = xs[i], y = ys[i];
+      dataPoints.push({ x: Number((+x).toFixed(6)), y: (y===null ? null : Number(y)) });
     }
 
-    // vertical asymptotes as annotations-like lines - Chart.js v4 has no native annotations without plugin,
-    // so we simulate by adding extra datasets with large values near asymptote x.
-    const extra = [];
-    vertAsym.forEach(x0=>{
-      // create a line near x0 by two close x points
-      const xIndex = xs.reduce((acc, val, idx) => (Math.abs(val - x0) < Math.abs(xs[acc] - x0) ? idx : acc), 0);
-      // build dataset
-      data.datasets.push({
-        label: `x=${x0.toFixed(4)} (asympt.)`,
-        data: xs.map((x,i)=> Math.abs(x - x0) < 1e-3 ? null : null),
-        borderDash: [6,6],
-        borderColor: '#9ca3af',
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-        type: 'line',
-      });
+    // compute y min/max from finite y's and clamp
+    const finiteYs = dataPoints.filter(p=>isFinite(p.y)).map(p=>p.y);
+    let yMin = finiteYs.length ? Math.min(...finiteYs) : -10;
+    let yMax = finiteYs.length ? Math.max(...finiteYs) : 10;
+    if(finiteYs.length){
+      if(!isFinite(yMin) || !isFinite(yMax)){ yMin=-10; yMax=10; }
+      // clamp extremes for visual reasons
+      const cap = 1000;
+      if(yMax > cap) yMax = cap;
+      if(yMin < -cap) yMin = -cap;
+      // expand a bit
+      const pad = Math.max(1, (yMax-yMin)*0.05);
+      yMin -= pad; yMax += pad;
+      if(yMax - yMin < 4){ const mid=(yMax+yMin)/2; yMin = mid-3; yMax = mid+3; }
+    } else { yMin = -10; yMax = 10; }
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [{ label:'f(x)', data: dataPoints, parsing:false, spanGaps:false, borderWidth:2, pointRadius:0, tension:0.12 }] },
+      options: {
+        animation:false, responsive:true, maintainAspectRatio:false,
+        scales:{
+          x:{ type:'linear', min:-10, max:10, ticks:{ stepSize:2 } },
+          y:{ type:'linear', min:yMin, max:yMax, ticks:{ stepSize: ((yMax-yMin)/5) } }
+        },
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => {
+          const y = ctx.parsed.y;
+          return (y===null ? 'indefinido' : 'f(' + ctx.parsed.x + ') = ' + (Math.abs(y-Math.round(y))<1e-8 ? Math.round(y) : (Math.round(y*100)/100)));
+        } } } }
+      }
     });
 
-    const cfg = {
-      type: 'line',
-      data: data,
-      options: {
-        animation:false,
-        normalized:true,
-        scales: {
-          x: {
-            type: 'category',
-            ticks: {
-              callback: function(val, idx) {
-                // show numeric ticks
-                const v = xs[idx];
-                return Number.isFinite(v) ? v : '';
-              }
-            }
-          },
-          y: { beginAtZero:false },
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function(ctx) {
-                if (ctx.parsed.y === null) return 'undefined';
-                return `f(${ctx.label}) = ${formatNumber(ctx.parsed.y)}`;
-              }
-            }
-          }
-        },
-        elements: { point: { radius: 2 } }
-      },
-      plugins: [{
-        id: 'holes-marker',
-        afterDatasetDraw(chartInstance, args) {
-          // draw holes as hollow circles on top
-          const ctx2 = chartInstance.ctx;
-          const xScale = chartInstance.scales.x;
-          const yScale = chartInstance.scales.y;
-          // find dataset index for f(x)
-          const ds = chartInstance.data.datasets[0];
-          if (!ds) return;
-          for (let h of holes) {
-            // find nearest x index
-            const idx = xs.findIndex(x => Math.abs(x - h) < 1e-6);
-            if (idx === -1) continue;
-            const y = ys[idx];
-            if (y === null || y === undefined) continue;
-            // pixel coords
-            const xPixel = xScale.getPixelForValue(idx);
-            const yPixel = yScale.getPixelForValue(y);
-            // draw hollow circle
-            ctx2.save();
-            ctx2.beginPath();
-            ctx2.arc(xPixel, yPixel, 6, 0, 2*Math.PI);
-            ctx2.fillStyle = '#fff';
-            ctx2.fill();
-            ctx2.lineWidth = 2;
-            ctx2.strokeStyle = '#111827';
-            ctx2.stroke();
-            ctx2.restore();
-          }
-          // draw vertical asymptotes as dashed lines
-          ctx2.save();
-          ctx2.setLineDash([6,6]);
-          ctx2.lineWidth = 1;
-          ctx2.strokeStyle = '#9ca3af';
-          for (let ax of vertAsym) {
-            // find nearest x pixel (interpolate)
-            // convert real x (value) to index approximate
-            const idx = findNearestIndex(xs, ax);
-            const xPixel = xScale.getPixelForValue(idx);
-            ctx2.beginPath();
-            ctx2.moveTo(xPixel, chartInstance.chartArea.top);
-            ctx2.lineTo(xPixel, chartInstance.chartArea.bottom);
-            ctx2.stroke();
-          }
-          ctx2.restore();
-          // draw oblique line if provided (as y = m*x + b)
-          if (obliqueLine) {
-            ctx2.save();
-            ctx2.setLineDash([4,4]);
-            ctx2.lineWidth = 1.2;
-            ctx2.strokeStyle = '#ef4444';
-            // draw across chart area
-            const xMin = xs[0], xMax = xs[xs.length-1];
-            // compute y at the ends
-            const y1 = obliqueLine.m * xMin + obliqueLine.b;
-            const y2 = obliqueLine.m * xMax + obliqueLine.b;
-            // convert to pixel
-            const xPix1 = xScale.getPixelForValue(0); // but xScale is category -> mapping idx 0..n-1
-            const xPix2 = xScale.getPixelForValue(xs.length-1);
-            const yPix1 = yScale.getPixelForValue(y1);
-            const yPix2 = yScale.getPixelForValue(y2);
-            ctx2.beginPath();
-            ctx2.moveTo(xPix1, yPix1);
-            ctx2.lineTo(xPix2, yPix2);
-            ctx2.stroke();
-            ctx2.restore();
-          }
-        }
-      }]
+    // draw holes and vertical asymptotes and oblique line using overlay
+    chart.options.plugins = chart.options.plugins || {};
+    chart.update();
+    const overlay = chart;
+    const drawOverlay = () => {
+      const chartArea = overlay.chartArea;
+      const ctx2 = overlay.ctx;
+      ctx2.save();
+      // vertical asymptotes dashed
+      ctx2.setLineDash([6,6]);
+      ctx2.strokeStyle = '#9ca3af';
+      ctx2.lineWidth = 1;
+      for(const ax of vertAsym){
+        if(ax < -10 || ax > 10) continue;
+        const pixel = overlay.scales.x.getPixelForValue(ax);
+        ctx2.beginPath(); ctx2.moveTo(pixel, chartArea.top); ctx2.lineTo(pixel, chartArea.bottom); ctx2.stroke();
+      }
+      ctx2.setLineDash([]);
+      // holes (hollow circles)
+      ctx2.fillStyle = '#fff'; ctx2.strokeStyle = '#111827'; ctx2.lineWidth = 2;
+      for(const hx of holes){
+        // find nearest plotted x to hx
+        const nearest = dataPoints.reduce((best,p)=> Math.abs(p.x-hx) < Math.abs(best.x-hx) ? p : best, dataPoints[0]);
+        if(!nearest || nearest.y===null || !isFinite(nearest.y)) continue;
+        const xPix = overlay.scales.x.getPixelForValue(nearest.x);
+        const yPix = overlay.scales.y.getPixelForValue(nearest.y);
+        ctx2.beginPath(); ctx2.arc(xPix, yPix, 6, 0, 2*Math.PI); ctx2.fill(); ctx2.stroke();
+      }
+      // oblique line
+      if(obliqueLine){
+        ctx2.setLineDash([4,4]); ctx2.strokeStyle = '#ef4444'; ctx2.lineWidth = 1.2;
+        const x1=-10, x2=10;
+        const y1 = obliqueLine.m * x1 + obliqueLine.b;
+        const y2 = obliqueLine.m * x2 + obliqueLine.b;
+        const xPix1 = overlay.scales.x.getPixelForValue(x1);
+        const xPix2 = overlay.scales.x.getPixelForValue(x2);
+        const yPix1 = overlay.scales.y.getPixelForValue(y1);
+        const yPix2 = overlay.scales.y.getPixelForValue(y2);
+        ctx2.beginPath(); ctx2.moveTo(xPix1,yPix1); ctx2.lineTo(xPix2,yPix2); ctx2.stroke();
+      }
+      ctx2.restore();
     };
-
-    if (chart) chart.destroy();
-    chart = new Chart(ctx, cfg);
+    // ensure overlay drawn after render
+    chart.options.animation = chart.options.animation || {};
+    chart.update();
+    drawOverlay();
   }
 
-  function findNearestIndex(xs, val) {
-    let best = 0;
-    let bestd = Math.abs(xs[0]-val);
-    for (let i=1;i<xs.length;i++){
-      const d = Math.abs(xs[i]-val);
-      if (d < bestd) { bestd = d; best = i; }
+  // compute polynomial roots by numeric scan is expensive; we attempt to find denom roots by sampling and then refine
+  function findDenomRoots(denEval){
+    const suspects = new Set();
+    for(let x=-50; x<=50; x+=0.25){
+      const v = denEval(x);
+      if(!isFinite(v) || Math.abs(v) < 1e-6) suspects.add(Math.round(x*100)/100);
     }
-    return best;
+    return Array.from(suspects).sort((a,b)=>a-b);
   }
 
-  function formatNumber(n) {
-    if (n === null || n === undefined) return 'undefined';
-    if (Math.abs(n) < 1e-8) return '0';
-    if (Math.abs(n - Math.round(n)) < 1e-8) return String(Math.round(n));
-    // limit decimals to max 6, remove trailing zeros
-    return Number.parseFloat(n.toFixed(6)).toString();
+  function computeRangeTextInterval(obj){
+    if(!obj) return null;
+    return `(${obj.min}, ${obj.max})`;
   }
 
-  // Main analyze function
-  function analyze(inputStr) {
-    $('summaryArea').textContent = 'Analizando...';
+  // main analyze
+  function analyze(input){
+    $('intro').style.display = 'none';
     $('details').style.display = 'none';
-    try {
-      const frac = splitFraction(inputStr);
-      if (!frac) {
-        $('summaryArea').innerHTML = '<span class="danger">Error:</span> Introduce la función como <code>(numerador)/(denominador)</code>.';
-        return;
-      }
-      const [numStr, denStr] = frac;
-      const numCoeffs = parsePolynomial(numStr);
-      const denCoeffs = parsePolynomial(denStr);
-      if (!numCoeffs || !denCoeffs) {
-        $('summaryArea').innerHTML = '<span class="danger">Error:</span> No se pudieron leer los polinomios. Revisa la guía de formato.';
-        return;
-      }
+    $('rangeWrap') && ($('rangeWrap').style.display = 'none');
 
-      // domain: all reals except real roots of denominator
-      const denRoots = findRealRoots(denCoeffs, {scanStep:0.25, range:200});
-      const numeratorRoots = findRealRoots(numCoeffs, {scanStep:0.25, range:200});
+    const frac = splitFrac(input);
+    if(!frac){ $('intro').textContent = 'Error: formato (numerador)/(denominador).'; return; }
+    const [numStr, denStr] = frac;
 
-      // detect holes: common roots (close)
-      const holes = [];
-      const verticals = [];
-      for (let r of denRoots) {
-        // if numerator also zero at r -> hole, else vertical asymptote
-        const nVal = evalPoly(numCoeffs, r);
-        if (Math.abs(nVal) < 1e-6) {
-          holes.push(r);
-        } else verticals.push(r);
-      }
+    const numCompiled = compileExpr(numStr);
+    const denCompiled = compileExpr(denStr);
+    if(!numCompiled || !denCompiled){ $('intro').textContent = 'Error: no se pudo parsear la expresión.'; return; }
 
-      // simplification: cancel common linear factors numerically
-      let simplifiedNum = numCoeffs.slice();
-      let simplifiedDen = denCoeffs.slice();
-      // try to cancel holes by dividing (x - r) repeatedly where r is hole
-      for (let r of holes) {
-        // synthetic division on numerator and denominator
-        const divN = syntheticDivide(simplifiedNum, r);
-        const divD = syntheticDivide(simplifiedDen, r);
-        // if remainder ~0 for both, accept cancellation
-        if (Math.abs(divN.rem) < 1e-6 && Math.abs(divD.rem) < 1e-6) {
-          simplifiedNum = divN.quot;
-          simplifiedDen = divD.quot;
-        }
-      }
+    function evalNum(x){ try{ return numCompiled.evaluate({x}); }catch{return NaN;} }
+    function evalDen(x){ try{ return denCompiled.evaluate({x}); }catch{return NaN;} }
+    function evalF(x){ const d=evalDen(x); const n=evalNum(x); if(!isFinite(d) || Math.abs(d) < 1e-12) return NaN; const val = n/d; return isFinite(val) ? val : NaN; }
 
-      // asymptote horizontal/oblicua: compare degrees
-      const degNum = degree(numCoeffs);
-      const degDen = degree(denCoeffs);
-      let horizObliqueText = 'Ninguna';
-      let obliqueLine = null;
-      if (degNum < degDen) {
-        horizObliqueText = 'y = 0 (asíntota horizontal)';
-      } else if (degNum === degDen) {
-        const lcNum = numCoeffs[numCoeffs.length-1];
-        const lcDen = denCoeffs[denCoeffs.length-1];
-        const y0 = lcNum / lcDen;
-        horizObliqueText = `y = ${formatNumber(y0)} (asíntota horizontal)`;
-      } else if (degNum === degDen + 1) {
-        // do polynomial division to get quotient (oblique) and remainder
-        const div = polyDiv(numCoeffs, denCoeffs);
-        if (div) {
-          // quotient is array of coeffs for oblique polynomial (degree 1 expected)
-          const q = div.quotient;
-          // if q is linear: y = m*x + b
-          const m = q.length>1 ? q[1] : 0;
-          const b = q[0] || 0;
-          horizObliqueText = `y = ${formatNumber(m)}x + ${formatNumber(b)} (asíntota oblicua)`;
-          obliqueLine = {m: m, b: b};
-        }
-      } else {
-        // degNum > degDen + 1 -> oblique polinómica of higher degree; we'll compute quotient
-        const div = polyDiv(numCoeffs, denCoeffs);
-        if (div) {
-          horizObliqueText = `y = ${polyToString(div.quotient)} (asíntota polinómica)`;
-        }
-      }
-
-      // simplified string
-      let simplifiedStr = '';
-      // if simplifiedDen is [1] and simplifiedNum linear etc, show simplified
-      // if both lengths same as original and no holes, say 'No se simplifica'
-      const originalStr = `${polyToString(numCoeffs)}/${polyToString(denCoeffs)}`;
-      const simpStr = `${polyToString(simplifiedNum)}/${polyToString(simplifiedDen)}`;
-      if (simpStr === originalStr) simplifiedStr = 'No se simplifica';
-      else simplifiedStr = simpStr;
-
-      // domain string
-      let domainText = 'Todos los reales';
-      if (denRoots.length>0) {
-        const parts = denRoots.map(r=>formatNumber(r));
-        domainText = `ℝ \\ { ${parts.join(', ')} }`;
-      }
-
-      // build table of values: sample x across range avoiding singularities
-      const xs = [];
-      const ys = [];
-      const sampleRange = 10;
-      const samples = 401; // dense
-      for (let i=0;i<samples;i++){
-        const x = -sampleRange + (i*(2*sampleRange)/(samples-1));
-        // skip if x near a vertical asymptote (denominator zero)
-        let skip = false;
-        for (let vr of denRoots) if (Math.abs(x - vr) < 1e-3) { skip = true; break; }
-        if (skip) { xs.push(x); ys.push(null); continue; }
-        // evaluate using math.js to avoid overflow for high degrees: compute value from coefficients
-        let y;
-        try { y = evalPoly(numCoeffs, x) / evalPoly(denCoeffs, x); }
-        catch(e) { y = null; }
-        if (!Number.isFinite(y)) y = null;
-        xs.push(Number.parseFloat(x.toFixed(6)));
-        ys.push(y === null ? null : Number.parseFloat(y));
-      }
-
-      // compact table: pick 9 points + near interesting points
-      const tableXs = [];
-      const tableYs = [];
-      // important x: integers from -4 to 4 (except singular)
-      const interesting = [-3,-2,-1,0,1,2,3,4,5];
-      for (let x of interesting) {
-        // compute y if not singular
-        let skip=false;
-        for (let vr of denRoots) if (Math.abs(x - vr) < 1e-8) { skip=true; break; }
-        if (skip) { tableXs.push(x); tableYs.push(null); continue; }
-        let y = evalPoly(numCoeffs, x) / evalPoly(denCoeffs, x);
-        if (!Number.isFinite(y)) y = null;
-        tableXs.push(x); tableYs.push(y);
-      }
-
-      // prepare outputs
-      $('simplified').textContent = simplifiedStr;
-      $('domain').textContent = domainText;
-      $('vertAsym').textContent = verticals.length>0 ? verticals.map(r=>`x=${formatNumber(r)}`).join(', ') : 'Ninguna';
-      $('horizAsym').textContent = horizObliqueText;
-      $('holes').textContent = holes.length>0 ? holes.map(r=>`x=${formatNumber(r)}`).join(', ') : 'Ninguno';
-
-      // fill table html
-      const tableWrap = $('tableWrap');
-      let html = '<table><thead><tr><th>x</th><th>f(x)</th></tr></thead><tbody>';
-      for (let i=0;i<tableXs.length;i++){
-        const x = tableXs[i], y = tableYs[i];
-        html += `<tr><td>${formatNumber(x)}</td><td>${ y === null ? '<span class="danger">indefinido</span>' : formatNumber(y) }</td></tr>`;
-      }
-      html += '</tbody></table>';
-      tableWrap.innerHTML = html;
-
-      // show details
-      $('details').style.display = 'block';
-      $('summaryArea').textContent = 'Listo — resultados generados abajo.';
-
-      // draw chart
-      // convert xs to numeric labels (we'll use category scale and indices)
-      drawChart(xs, ys, holes, verticals, obliqueLine);
-
-    } catch (err) {
-      console.error(err);
-      $('summaryArea').innerHTML = '<span class="danger">Error al analizar la función.</span> Revisa el formato.';
+    // denom zeros / singularities
+    const denomRoots = findDenomRoots(evalDen);
+    // classify holes vs vertical asymptotes
+    const holes = [], verticals = [];
+    for(const r of denomRoots){
+      const nv = evalNum(r);
+      if(isFinite(nv) && Math.abs(nv) < 1e-6) holes.push(r);
+      else verticals.push(r);
     }
+
+    // attempt simple simplification text (not symbolic factoring): if hole exists, note it
+    let simplifiedText = 'No se simplifica';
+    if(holes.length>0) simplifiedText = 'Cancelación en huecos posible';
+
+    // asymptote estimate: check degrees via numeric growth
+    // sample far values to detect horizontal or oblique
+    let horizOblique = null;
+    const vLarge1 = evalF(30000), vLarge2 = evalF(35000);
+    if(isFinite(vLarge1) && isFinite(vLarge2) && Math.abs(vLarge1 - vLarge2) < 1){
+      horizOblique = { type:'horizontal', value: r2((vLarge1+vLarge2)/2) };
+    } else {
+      // linear fit at large x
+      const xsFit=[], ysFit=[];
+      for(let X=20000; X<=30000; X+=2000){
+        const y = evalF(X);
+        if(isFinite(y)){ xsFit.push(X); ysFit.push(y); }
+      }
+      if(xsFit.length>=2){
+        const n=xsFit.length;
+        const sX=xsFit.reduce((a,b)=>a+b,0), sY=ysFit.reduce((a,b)=>a+b,0);
+        const sXY=xsFit.map((v,i)=>v*ysFit[i]).reduce((a,b)=>a+b,0);
+        const sX2=xsFit.map(v=>v*v).reduce((a,b)=>a+b,0);
+        const m = (n*sXY - sX*sY) / (n*sX2 - sX*sX);
+        const b = (sY - m*sX)/n;
+        horizOblique = { type:'oblique', m: r2(m), b: r2(b) };
+      }
+    }
+
+    // build adaptive dataset
+    const ds = buildDataset(evalF);
+
+    // compute approximate range and decide whether to show
+    const rangeObj = (ds && ds.ys) ? (function(){
+      const finiteYs = ds.ys.filter(v=>isFinite(v));
+      return computeRangeFrom(finiteYs);
+    })() : null;
+
+    // fill UI
+    $('simplified').textContent = simplifiedText;
+    $('domainText').textContent = denomRoots.length ? ('Reales \\ { ' + denomRoots.map(r=>fmt(r)).join(', ') + ' }') : 'Reales';
+    // domain math notation: build as union of intervals (approx)
+    const domainMath = denomRoots.length ? (function(){
+      const sorted = denomRoots.slice().sort((a,b)=>a-b);
+      // create intervals between -inf and +inf excluding roots
+      const parts=[];
+      let left = -Infinity;
+      for(const r of sorted){
+        parts.push((left===-Infinity? '(-∞' : `(${fmt(left)}`) + `, ${fmt(r)})`);
+        left = r;
+      }
+      parts.push(`(${fmt(sorted[sorted.length-1])}, ∞)`); // last to infinity
+      // correct edge if only one root
+      if(sorted.length===1) return `(-∞, ${fmt(sorted[0])}) ∪ (${fmt(sorted[0])}, ∞)`;
+      return parts.join(' ∪ ');
+    })() : '(-∞, ∞)';
+    $('domainMath').textContent = domainMath;
+
+    $('vertAsym').textContent = verticals.length ? verticals.map(v=> 'x=' + fmt(v)).join(', ') : 'Ninguna';
+    $('horizAsym').textContent = horizOblique ? (horizOblique.type==='horizontal' ? 'y = ' + fmt(horizOblique.value) : ('y = ' + fmt(horizOblique.m) + 'x + ' + fmt(horizOblique.b))) : 'Ninguna';
+    $('holes').textContent = holes.length ? holes.map(v=>'x='+fmt(v)).join(', ') : 'Ninguno';
+
+    if(rangeObj){
+      $('rangeWrap').style.display = 'block';
+      $('rangeMath').textContent = `(${fmt(rangeObj.min)}, ${fmt(rangeObj.max)})`;
+      $('rangeText').textContent = `Valores entre ${fmt(rangeObj.min)} y ${fmt(rangeObj.max)}`;
+    } else {
+      $('rangeWrap').style.display = 'none';
+    }
+
+    // table: show x values -4..4 and the holes/verticals (unique)
+    const tableXs = [];
+    for(let i=-4;i<=4;i++) tableXs.push(i);
+    holes.forEach(h=> tableXs.push(Number(r2(h))));
+    verticals.forEach(v=> tableXs.push(Number(r2(v))));
+    const uniq = Array.from(new Set(tableXs)).sort((a,b)=>a-b);
+    let html = '<table><tr>';
+    uniq.forEach(x=> html += `<th>${fmt(x)}</th>`);
+    html += '</tr><tr>';
+    uniq.forEach(x=>{
+      const y = evalF(x);
+      html += `<td>${isFinite(y) ? fmt(y) : '<span class="danger">indefinido</span>'}</td>`;
+    });
+    html += '</tr></table>';
+    $('tableWrap').innerHTML = html;
+
+    $('details').style.display = 'block';
+    // plot
+    plotChart(ds.xs, ds.ys, holes, verticals, horizOblique && horizOblique.type==='oblique' ? {m:horizOblique.m,b:horizOblique.b} : null);
   }
 
-  // UI events
-  const input = $('functionInput');
-  $('analyzeBtn').addEventListener('click', () => {
-    const v = input.value.trim();
-    if (!v) {
-      $('summaryArea').innerHTML = '<span class="danger">Error:</span> La caja está vacía. Escribe la función antes de analizar.';
-      return;
+  // helpers
+  function buildDataset(fEval){
+    const pts = [];
+    // sample coarse and adaptively refine
+    for(let a=-10; a<10; a+=1){
+      const b = a+1;
+      const fa = fEval(a), fb = fEval(b);
+      const seg = adaptiveSample(fEval, a, b, fa, fb, 0.6, 0, 12);
+      // seg is array of points possibly containing NaN entries; push them
+      for(const p of seg) pts.push(p);
     }
-    analyze(v);
-  });
-
-  // Enter key
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      $('analyzeBtn').click();
+    // compress consecutive duplicates
+    const xs = [], ys = [];
+    for(const p of pts){
+      const x = Number(p.x);
+      const y = (isFinite(p.y) ? p.y : null);
+      xs.push(x); ys.push(y);
     }
-  });
+    return { xs, ys };
+  }
 
-  // initial state: empty input (no default)
-  input.value = '';
+  // DOM shortcuts
+  window.$ = $;
+  $('btnAnalyze').addEventListener('click', ()=> analyze($('fnInput').value.trim()));
+  $('fnInput').addEventListener('keydown', e=> { if(e.key==='Enter'){ e.preventDefault(); $('btnAnalyze').click(); } });
 
-  // small util for debugging (expose)
+  // expose for debug
   window._analyze = analyze;
-
 })();
 </script>
-
 </body>
 </html>
