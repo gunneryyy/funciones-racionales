@@ -1,159 +1,689 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Rational Function Analyzer</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Analizador de Funciones Racionales</title>
 
-<style>
-    body {
-        font-family: Arial;
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        gap: 20px;
+  <!-- Chart.js para la gráfica -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- math.js para evaluaciones seguras -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.js"></script>
+
+  <style>
+    :root{
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --accent:#2563eb;
+      --muted:#6b7280;
+      --success:#059669;
+      --danger:#ef4444;
     }
-    .left {
-        width: 40%;
+    body{
+      margin:0;
+      font-family:Inter,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:#111827;
+      padding:22px;
     }
-    .plot {
-        width: 60%;
+    .wrap{
+      max-width:1000px;
+      margin:18px auto;
     }
-    input, button {
-        width: 100%;
-        padding: 8px;
-        margin-top: 10px;
-        font-size: 16px;
+    .card{
+      background:var(--card);
+      border-radius:12px;
+      box-shadow:0 6px 18px rgba(16,24,40,0.06);
+      padding:20px;
+      margin-bottom:14px;
     }
-    table {
-        width: 100%;
-        margin-top: 15px;
-        border-collapse: collapse;
+    h1{margin:0 0 8px 0;font-size:20px}
+    .example{
+      background:#eef2ff;border-left:4px solid var(--accent);
+      padding:10px;border-radius:8px;margin-bottom:14px;color:#0f172a;
     }
-    th, td {
-        padding: 5px;
-        border: 1px solid #aaa;
-        text-align: center;
+    .input-row{display:flex;gap:10px;align-items:center}
+    #functionInput{
+      flex:1;padding:12px;border-radius:8px;border:1px solid #e6edf8;font-size:15px;
+      outline:none;
     }
-</style>
+    button{
+      background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;
+      cursor:pointer;font-weight:600;
+    }
+    button:active{transform:translateY(1px)}
+    .guide{background:#f9fafb;border-radius:8px;padding:12px;border:1px solid #eee;margin-top:12px;color:var(--muted)}
+    .results{display:grid;grid-template-columns:1fr 380px;gap:14px;margin-top:14px}
+    .block{background:#fff;border-radius:10px;padding:12px;border:1px solid #f0f0f0;min-height:80px}
+    .small{font-size:13px;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    td,th{padding:6px 8px;border-bottom:1px dashed #eee;font-size:14px}
+    .danger{color:var(--danger)}
+    .asymptote{color:#9ca3af;font-size:13px}
+    canvas{background:#ffffff;border-radius:8px;padding:6px}
+    .note{font-size:13px;color:var(--muted);margin-top:8px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .chip{background:#f3f4f6;padding:6px 8px;border-radius:999px;font-size:13px;color:#374151;border:1px solid #e5e7eb}
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Analizador de funciones racionales</h1>
+      <div class="example"><strong>Ejemplo:</strong> <span class="small">f(x) = (x^2 - 4) / (x - 2)</span></div>
 
-<div class="left">
-    <h2>Rational Function Analyzer</h2>
+      <div class="input-row">
+        <input id="functionInput" placeholder="Escribe la función como (numerador)/(denominador). Ej: (2*x^2 - 5*x + 3)/(x - 1)" autocomplete="off" />
+        <button id="analyzeBtn">Analizar</button>
+      </div>
 
-    <label>Numerator:</label>
-    <input id="numInput" placeholder="e.g. 2x^2 - 4">
+      <div class="guide">
+        <strong>Cómo ingresar la función:</strong>
+        <ul>
+          <li>Usa <code>x</code> como variable.</li>
+          <li>Escribe potencias como <code>x^2</code>, <code>x^3</code>.</li>
+          <li>Multiplicación explícita: <code>2*x</code> (no escribir 2x).</li>
+          <li>Debes ingresar una fracción en formato <code>(numerador)/(denominador)</code> si la función es racional.</li>
+          <li>Soportado: coeficientes reales, constantes, potencias. No se permiten funciones trig/exp complejas en la versión polinómica.</li>
+        </ul>
+      </div>
+    </div>
 
-    <label>Denominator:</label>
-    <input id="denInput" placeholder="e.g. x - 2">
+    <div class="results">
+      <div class="card block" style="min-height:320px;">
+        <h3>Resultados</h3>
+        <div id="summaryArea" class="small note">Ingresa una función y pulsa <strong>Analizar</strong>.</div>
 
-    <button onclick="analyze()">Analyze</button>
+        <div id="details" style="margin-top:10px;display:none">
+          <p><strong>Simplificación:</strong> <span id="simplified"></span></p>
+          <p><strong>Dominio:</strong> <span id="domain"></span></p>
+          <p><strong>Asíntotas verticales:</strong> <span id="vertAsym"></span></p>
+          <p><strong>Asíntota horizontal / oblicua:</strong> <span id="horizAsym"></span></p>
+          <p><strong>Huecos:</strong> <span id="holes"></span></p>
 
-    <h3>Sample Table</h3>
-    <table id="table">
-        <tr><th>x</th><th>f(x)</th></tr>
-    </table>
-</div>
+          <div style="margin-top:10px;">
+            <strong>Tabla de valores (muestra):</strong>
+            <div id="tableWrap" style="margin-top:6px"></div>
+          </div>
+        </div>
+      </div>
 
-<div class="plot" id="graph"></div>
+      <div class="card block">
+        <h3>Gráfica</h3>
+        <canvas id="chart" height="300"></canvas>
+        <div id="chartNote" class="note">La gráfica evita puntos singulares y marca huecos con un punto vacío.</div>
+      </div>
+    </div>
+  </div>
 
 <script>
+(() => {
+  // helpers
+  const $ = id => document.getElementById(id);
+  const math = window.math;
 
-// Insert automatic multiplication: 2x → 2*x
-function fixExpr(expr){
-    expr = expr.replace(/(\d)(x)/gi, "$1*$2");
-    expr = expr.replace(/x(\d)/gi, "x*$1");
-    return expr;
-}
-
-// Evaluate numerator and denominator separately
-function buildEvaluator(expr){
-    try {
-        const node = math.parse(expr);
-        const code = node.compile();
-        return x => {
-            const v = code.evaluate({x});
-            return (isFinite(v) ? v : NaN);
-        };
-    } catch {
-        return () => NaN;
+  // Parse top-level fraction: split on "/" not inside parentheses
+  function splitFraction(input) {
+    let s = input.trim();
+    // if the whole input is like f(x)=... remove "f(x)="
+    s = s.replace(/^\s*f\s*\(\s*x\s*\)\s*=\s*/i, '');
+    // remove outer spaces
+    // find slash at top level
+    let depth = 0;
+    for (let i=0;i<s.length;i++){
+      const ch = s[i];
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (ch === '/' && depth === 0) {
+        const left = s.slice(0,i).trim();
+        const right = s.slice(i+1).trim();
+        return [left, right];
+      }
     }
-}
+    return null;
+  }
 
-// Safer adaptive sampling
-function adaptiveSample(f, a, b, fa, fb, tol=0.5, depth=0, maxDepth=12){
-    const mid = (a + b) / 2;
-    const fm = f(mid);
+  // normalize caret ^ to ** for math.js evaluation, but we'll parse polynomials manually
+  function normalizeExpr(str){
+    return str.replace(/\^/g, '**').replace(/\s+/g,'');
+  }
 
-    if(!isFinite(fa) || !isFinite(fb) || !isFinite(fm)){
-        return [
-            {x: a, y: isFinite(fa)?fa:null},
-            {x: mid, y: null},
-            {x: b, y: isFinite(fb)?fb:null}
-        ];
+  // Parse polynomial string into coefficient array: coeffs[i] is coef for x^i
+  // Supports terms like: 3*x^2, -x^3, 4, 2.5*x
+  function parsePolynomial(polyStr) {
+    // remove outer parentheses
+    let s = polyStr.trim();
+    if (s.startsWith('(') && s.endsWith(')')) {
+      s = s.slice(1,-1);
     }
-
-    const lin = (fa + fb) / 2;
-    const err = Math.abs(fm - lin);
-
-    if(err < tol || depth >= maxDepth){
-        return [
-            {x:a, y:fa},
-            {x:mid, y:fm},
-            {x:b, y:fb}
-        ];
+    // replace unary plus for easier splitting
+    s = s.replace(/\s+/g,'');
+    // insert + before - for split, but preserve leading -
+    s = s.replace(/^\-/,'~'); // mark leading negative
+    s = s.replace(/\+/g,'+');
+    s = s.replace(/\-/g,'+-');
+    s = s.replace(/~/,'-');
+    const terms = s.split('+').filter(Boolean);
+    let coeffs = {};
+    for (let t of terms) {
+      // term examples: 2*x^2  -x^2  4  3*x
+      let coef = 1;
+      let pow = 0;
+      // handle sign
+      if (t === '-') { coef = -1; t = '1'; }
+      // find x
+      if (t.includes('x')) {
+        // split coef and power
+        const parts = t.split('x');
+        let cpart = parts[0];
+        if (cpart === '' || cpart === '+') coef = 1;
+        else if (cpart === '-') coef = -1;
+        else {
+          // remove * if present
+          cpart = cpart.replace(/\*$/,'');
+          coef = parseFloat(cpart);
+          if (isNaN(coef)) return null;
+        }
+        if (parts[1]) {
+          const m = parts[1].match(/\^(\d+)/);
+          if (m) pow = parseInt(m[1],10);
+          else pow = 1;
+        } else pow = 1;
+      } else {
+        // constant
+        coef = parseFloat(t);
+        if (isNaN(coef)) return null;
+        pow = 0;
+      }
+      coeffs[pow] = (coeffs[pow] || 0) + coef;
     }
+    // convert to array
+    const maxPow = Math.max(...Object.keys(coeffs).map(k=>parseInt(k,10)));
+    const arr = new Array(maxPow+1).fill(0);
+    for (let k in coeffs) arr[parseInt(k,10)] = coeffs[k];
+    // trim trailing zeros
+    while (arr.length>1 && Math.abs(arr[arr.length-1]) < 1e-12) arr.pop();
+    return arr;
+  }
 
-    const left = adaptiveSample(f, a, mid, fa, fm, tol, depth+1, maxDepth);
-    const right = adaptiveSample(f, mid, b, fm, fb, tol, depth+1, maxDepth);
+  // Evaluate polynomial (coeffs array) at x
+  function evalPoly(coeffs, x) {
+    let y = 0;
+    for (let i=coeffs.length-1;i>=0;i--){
+      y = y * x + coeffs[i];
+    }
+    return y;
+  }
 
-    return [...left, ...right.slice(1)];
-}
+  // Degree
+  function degree(coeffs){ return coeffs.length-1; }
 
-// Build full rational function evaluator
-function buildRational(numEval, denEval){
-    return (x)=>{
-        let d = denEval(x);
-        let n = numEval(x);
-        if(!isFinite(d) || Math.abs(d) < 1e-12) return NaN;
-        let v = n / d;
-        return isFinite(v)?v:NaN;
+  // Polynomial long division: returns {quotient, remainder}
+  function polyDiv(num, den) {
+    // clone arrays
+    let a = num.slice();
+    const b = den.slice();
+    const n = a.length - 1;
+    const m = b.length - 1;
+    if (b.length === 0) return null;
+    if (n < m) return { quotient: [0], remainder: a };
+    let q = new Array(n - m + 1).fill(0);
+    for (let k = n - m; k>=0; k--) {
+      const coeff = a[m + k] / b[m];
+      q[k] = coeff;
+      for (let j = 0; j<=m; j++){
+        a[j + k] -= coeff * b[j];
+      }
+    }
+    // trim remainder
+    while (a.length>0 && Math.abs(a[a.length-1]) < 1e-10) a.pop();
+    if (a.length===0) a = [0];
+    while (q.length>1 && Math.abs(q[q.length-1]) < 1e-12) q.pop();
+    return { quotient: q, remainder: a };
+  }
+
+  // Find real roots by scanning and bisection in interval [-R, R]
+  function findRealRoots(coeffs, opts={tol:1e-7, maxIter:50, scanStep:0.5, range:200}) {
+    const f = x => evalPoly(coeffs, x);
+    const roots = [];
+    const R = opts.range || 200;
+    const step = opts.scanStep || 0.5;
+    let xs = [];
+    for (let x=-R; x<=R; x+=step) xs.push(x);
+    for (let i=0;i<xs.length-1;i++){
+      const a = xs[i], b = xs[i+1];
+      const fa = f(a), fb = f(b);
+      if (isNaN(fa)||isNaN(fb)) continue;
+      if (Math.sign(fa) === 0) {
+        roots.push(a);
+      } else if (fa * fb < 0) {
+        // bisection
+        let lo = a, hi = b, flo = fa, fhi = fb;
+        for (let it=0; it<opts.maxIter; it++){
+          const mid = (lo+hi)/2;
+          const fm = f(mid);
+          if (Math.abs(fm) < opts.tol) { lo = hi = mid; break; }
+          if (flo * fm <= 0) { hi = mid; fhi = fm; }
+          else { lo = mid; flo = fm; }
+        }
+        const root = (lo+hi)/2;
+        // avoid duplicates
+        if (!roots.some(r=>Math.abs(r-root) < 1e-4)) roots.push(root);
+      }
+    }
+    // Also check for multiplicity: try refining around found roots
+    return roots.sort((a,b)=>a-b);
+  }
+
+  // Synthetic division by (x - r) returning new coeffs
+  function syntheticDivide(coeffs, r) {
+    const n = coeffs.length - 1;
+    const out = new Array(n).fill(0);
+    out[n-1] = coeffs[n];
+    for (let i=n-2; i>=0; i--){
+      out[i] = coeffs[i+1] + r * out[i+1];
+    }
+    const remainder = coeffs[0] + r * out[0];
+    return {quot: out, rem: remainder};
+  }
+
+  // Format polynomial array to string
+  function polyToString(coeffs) {
+    if (!coeffs || coeffs.length===0) return '0';
+    let parts = [];
+    for (let i=coeffs.length-1;i>=0;i--){
+      const c = coeffs[i];
+      if (Math.abs(c) < 1e-12) continue;
+      const sign = c < 0 ? '-' : (parts.length===0 ? '' : '+');
+      const mag = Math.abs(c);
+      if (i===0) parts.push(`${sign}${mag}`);
+      else if (i===1) parts.push(`${sign}${(mag===1? '' : mag+'*')}x`);
+      else parts.push(`${sign}${(mag===1? '' : mag+'*')}x^${i}`);
+    }
+    return parts.join(' ').replace(/\+\-/g,'- ');
+  }
+
+  // Build chart
+  let chart = null;
+  function drawChart(xs, ys, holes=[], vertAsym=[], obliqueLine=null) {
+    const ctx = $('chart');
+    const data = {
+      labels: xs,
+      datasets: [
+        {
+          label: 'f(x)',
+          data: ys,
+          showLine: true,
+          fill: false,
+          borderWidth: 2,
+          tension: 0.0,
+          pointRadius: 2,
+        }
+      ]
     };
-}
-
-function analyze(){
-    const numStr = fixExpr(document.getElementById("numInput").value);
-    const denStr = fixExpr(document.getElementById("denInput").value);
-
-    const evalNum = buildEvaluator(numStr);
-    const evalDen = buildEvaluator(denStr);
-    const f = buildRational(evalNum, evalDen);
-
-    let a = -10, b = 10;
-    let fa = f(a), fb = f(b);
-    const pts = adaptiveSample(f, a, b, fa, fb);
-
-    // GRAPH
-    Plotly.newPlot("graph", [{
-        x: pts.map(p=>p.x),
-        y: pts.map(p=>p.y),
-        mode:"lines",
-        connectgaps:false
-    }], {margin:{t:20}});
-
-    // TABLE
-    const tbl = document.getElementById("table");
-    tbl.innerHTML = "<tr><th>x</th><th>f(x)</th></tr>";
-
-    for(let x=-5; x<=5; x++){
-        let y = f(x);
-        tbl.innerHTML += `<tr><td>${x}</td><td>${isFinite(y)?y.toFixed(3):"indefinido"}</td></tr>`;
+    // if holes exist, add a dataset for holes
+    if (holes && holes.length>0) {
+      const holeData = xs.map((x,i)=> {
+        const found = holes.find(h=>Math.abs(h - x) < 1e-6);
+        if (found) return {x: x, y: null};
+        return null;
+      }).filter(Boolean);
+      // We'll mark holes separately using scatter (we'll compute their y by eval)
+      const holeYs = [];
+      const holeXs = [];
+      for (let h of holes) {
+        holeXs.push(h);
+        holeYs.push(null); // we'll overlay point later manually
+      }
+      // Chart.js scatter points require coordinates; we'll plot holes on top using plugin below
+      data.datasets.push({
+        label: 'Huecos',
+        data: [], // handled in plugin
+        showLine: false,
+        pointStyle: 'circle',
+        pointRadius: 6,
+        backgroundColor: 'white',
+        borderColor: 'black',
+        borderWidth:1.5,
+        type: 'scatter',
+        parsing:false,
+      });
     }
-}
 
+    // vertical asymptotes as annotations-like lines - Chart.js v4 has no native annotations without plugin,
+    // so we simulate by adding extra datasets with large values near asymptote x.
+    const extra = [];
+    vertAsym.forEach(x0=>{
+      // create a line near x0 by two close x points
+      const xIndex = xs.reduce((acc, val, idx) => (Math.abs(val - x0) < Math.abs(xs[acc] - x0) ? idx : acc), 0);
+      // build dataset
+      data.datasets.push({
+        label: `x=${x0.toFixed(4)} (asympt.)`,
+        data: xs.map((x,i)=> Math.abs(x - x0) < 1e-3 ? null : null),
+        borderDash: [6,6],
+        borderColor: '#9ca3af',
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+        type: 'line',
+      });
+    });
+
+    const cfg = {
+      type: 'line',
+      data: data,
+      options: {
+        animation:false,
+        normalized:true,
+        scales: {
+          x: {
+            type: 'category',
+            ticks: {
+              callback: function(val, idx) {
+                // show numeric ticks
+                const v = xs[idx];
+                return Number.isFinite(v) ? v : '';
+              }
+            }
+          },
+          y: { beginAtZero:false },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                if (ctx.parsed.y === null) return 'undefined';
+                return `f(${ctx.label}) = ${formatNumber(ctx.parsed.y)}`;
+              }
+            }
+          }
+        },
+        elements: { point: { radius: 2 } }
+      },
+      plugins: [{
+        id: 'holes-marker',
+        afterDatasetDraw(chartInstance, args) {
+          // draw holes as hollow circles on top
+          const ctx2 = chartInstance.ctx;
+          const xScale = chartInstance.scales.x;
+          const yScale = chartInstance.scales.y;
+          // find dataset index for f(x)
+          const ds = chartInstance.data.datasets[0];
+          if (!ds) return;
+          for (let h of holes) {
+            // find nearest x index
+            const idx = xs.findIndex(x => Math.abs(x - h) < 1e-6);
+            if (idx === -1) continue;
+            const y = ys[idx];
+            if (y === null || y === undefined) continue;
+            // pixel coords
+            const xPixel = xScale.getPixelForValue(idx);
+            const yPixel = yScale.getPixelForValue(y);
+            // draw hollow circle
+            ctx2.save();
+            ctx2.beginPath();
+            ctx2.arc(xPixel, yPixel, 6, 0, 2*Math.PI);
+            ctx2.fillStyle = '#fff';
+            ctx2.fill();
+            ctx2.lineWidth = 2;
+            ctx2.strokeStyle = '#111827';
+            ctx2.stroke();
+            ctx2.restore();
+          }
+          // draw vertical asymptotes as dashed lines
+          ctx2.save();
+          ctx2.setLineDash([6,6]);
+          ctx2.lineWidth = 1;
+          ctx2.strokeStyle = '#9ca3af';
+          for (let ax of vertAsym) {
+            // find nearest x pixel (interpolate)
+            // convert real x (value) to index approximate
+            const idx = findNearestIndex(xs, ax);
+            const xPixel = xScale.getPixelForValue(idx);
+            ctx2.beginPath();
+            ctx2.moveTo(xPixel, chartInstance.chartArea.top);
+            ctx2.lineTo(xPixel, chartInstance.chartArea.bottom);
+            ctx2.stroke();
+          }
+          ctx2.restore();
+          // draw oblique line if provided (as y = m*x + b)
+          if (obliqueLine) {
+            ctx2.save();
+            ctx2.setLineDash([4,4]);
+            ctx2.lineWidth = 1.2;
+            ctx2.strokeStyle = '#ef4444';
+            // draw across chart area
+            const xMin = xs[0], xMax = xs[xs.length-1];
+            // compute y at the ends
+            const y1 = obliqueLine.m * xMin + obliqueLine.b;
+            const y2 = obliqueLine.m * xMax + obliqueLine.b;
+            // convert to pixel
+            const xPix1 = xScale.getPixelForValue(0); // but xScale is category -> mapping idx 0..n-1
+            const xPix2 = xScale.getPixelForValue(xs.length-1);
+            const yPix1 = yScale.getPixelForValue(y1);
+            const yPix2 = yScale.getPixelForValue(y2);
+            ctx2.beginPath();
+            ctx2.moveTo(xPix1, yPix1);
+            ctx2.lineTo(xPix2, yPix2);
+            ctx2.stroke();
+            ctx2.restore();
+          }
+        }
+      }]
+    };
+
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, cfg);
+  }
+
+  function findNearestIndex(xs, val) {
+    let best = 0;
+    let bestd = Math.abs(xs[0]-val);
+    for (let i=1;i<xs.length;i++){
+      const d = Math.abs(xs[i]-val);
+      if (d < bestd) { bestd = d; best = i; }
+    }
+    return best;
+  }
+
+  function formatNumber(n) {
+    if (n === null || n === undefined) return 'undefined';
+    if (Math.abs(n) < 1e-8) return '0';
+    if (Math.abs(n - Math.round(n)) < 1e-8) return String(Math.round(n));
+    // limit decimals to max 6, remove trailing zeros
+    return Number.parseFloat(n.toFixed(6)).toString();
+  }
+
+  // Main analyze function
+  function analyze(inputStr) {
+    $('summaryArea').textContent = 'Analizando...';
+    $('details').style.display = 'none';
+    try {
+      const frac = splitFraction(inputStr);
+      if (!frac) {
+        $('summaryArea').innerHTML = '<span class="danger">Error:</span> Introduce la función como <code>(numerador)/(denominador)</code>.';
+        return;
+      }
+      const [numStr, denStr] = frac;
+      const numCoeffs = parsePolynomial(numStr);
+      const denCoeffs = parsePolynomial(denStr);
+      if (!numCoeffs || !denCoeffs) {
+        $('summaryArea').innerHTML = '<span class="danger">Error:</span> No se pudieron leer los polinomios. Revisa la guía de formato.';
+        return;
+      }
+
+      // domain: all reals except real roots of denominator
+      const denRoots = findRealRoots(denCoeffs, {scanStep:0.25, range:200});
+      const numeratorRoots = findRealRoots(numCoeffs, {scanStep:0.25, range:200});
+
+      // detect holes: common roots (close)
+      const holes = [];
+      const verticals = [];
+      for (let r of denRoots) {
+        // if numerator also zero at r -> hole, else vertical asymptote
+        const nVal = evalPoly(numCoeffs, r);
+        if (Math.abs(nVal) < 1e-6) {
+          holes.push(r);
+        } else verticals.push(r);
+      }
+
+      // simplification: cancel common linear factors numerically
+      let simplifiedNum = numCoeffs.slice();
+      let simplifiedDen = denCoeffs.slice();
+      // try to cancel holes by dividing (x - r) repeatedly where r is hole
+      for (let r of holes) {
+        // synthetic division on numerator and denominator
+        const divN = syntheticDivide(simplifiedNum, r);
+        const divD = syntheticDivide(simplifiedDen, r);
+        // if remainder ~0 for both, accept cancellation
+        if (Math.abs(divN.rem) < 1e-6 && Math.abs(divD.rem) < 1e-6) {
+          simplifiedNum = divN.quot;
+          simplifiedDen = divD.quot;
+        }
+      }
+
+      // asymptote horizontal/oblicua: compare degrees
+      const degNum = degree(numCoeffs);
+      const degDen = degree(denCoeffs);
+      let horizObliqueText = 'Ninguna';
+      let obliqueLine = null;
+      if (degNum < degDen) {
+        horizObliqueText = 'y = 0 (asíntota horizontal)';
+      } else if (degNum === degDen) {
+        const lcNum = numCoeffs[numCoeffs.length-1];
+        const lcDen = denCoeffs[denCoeffs.length-1];
+        const y0 = lcNum / lcDen;
+        horizObliqueText = `y = ${formatNumber(y0)} (asíntota horizontal)`;
+      } else if (degNum === degDen + 1) {
+        // do polynomial division to get quotient (oblique) and remainder
+        const div = polyDiv(numCoeffs, denCoeffs);
+        if (div) {
+          // quotient is array of coeffs for oblique polynomial (degree 1 expected)
+          const q = div.quotient;
+          // if q is linear: y = m*x + b
+          const m = q.length>1 ? q[1] : 0;
+          const b = q[0] || 0;
+          horizObliqueText = `y = ${formatNumber(m)}x + ${formatNumber(b)} (asíntota oblicua)`;
+          obliqueLine = {m: m, b: b};
+        }
+      } else {
+        // degNum > degDen + 1 -> oblique polinómica of higher degree; we'll compute quotient
+        const div = polyDiv(numCoeffs, denCoeffs);
+        if (div) {
+          horizObliqueText = `y = ${polyToString(div.quotient)} (asíntota polinómica)`;
+        }
+      }
+
+      // simplified string
+      let simplifiedStr = '';
+      // if simplifiedDen is [1] and simplifiedNum linear etc, show simplified
+      // if both lengths same as original and no holes, say 'No se simplifica'
+      const originalStr = `${polyToString(numCoeffs)}/${polyToString(denCoeffs)}`;
+      const simpStr = `${polyToString(simplifiedNum)}/${polyToString(simplifiedDen)}`;
+      if (simpStr === originalStr) simplifiedStr = 'No se simplifica';
+      else simplifiedStr = simpStr;
+
+      // domain string
+      let domainText = 'Todos los reales';
+      if (denRoots.length>0) {
+        const parts = denRoots.map(r=>formatNumber(r));
+        domainText = `ℝ \\ { ${parts.join(', ')} }`;
+      }
+
+      // build table of values: sample x across range avoiding singularities
+      const xs = [];
+      const ys = [];
+      const sampleRange = 10;
+      const samples = 401; // dense
+      for (let i=0;i<samples;i++){
+        const x = -sampleRange + (i*(2*sampleRange)/(samples-1));
+        // skip if x near a vertical asymptote (denominator zero)
+        let skip = false;
+        for (let vr of denRoots) if (Math.abs(x - vr) < 1e-3) { skip = true; break; }
+        if (skip) { xs.push(x); ys.push(null); continue; }
+        // evaluate using math.js to avoid overflow for high degrees: compute value from coefficients
+        let y;
+        try { y = evalPoly(numCoeffs, x) / evalPoly(denCoeffs, x); }
+        catch(e) { y = null; }
+        if (!Number.isFinite(y)) y = null;
+        xs.push(Number.parseFloat(x.toFixed(6)));
+        ys.push(y === null ? null : Number.parseFloat(y));
+      }
+
+      // compact table: pick 9 points + near interesting points
+      const tableXs = [];
+      const tableYs = [];
+      // important x: integers from -4 to 4 (except singular)
+      const interesting = [-3,-2,-1,0,1,2,3,4,5];
+      for (let x of interesting) {
+        // compute y if not singular
+        let skip=false;
+        for (let vr of denRoots) if (Math.abs(x - vr) < 1e-8) { skip=true; break; }
+        if (skip) { tableXs.push(x); tableYs.push(null); continue; }
+        let y = evalPoly(numCoeffs, x) / evalPoly(denCoeffs, x);
+        if (!Number.isFinite(y)) y = null;
+        tableXs.push(x); tableYs.push(y);
+      }
+
+      // prepare outputs
+      $('simplified').textContent = simplifiedStr;
+      $('domain').textContent = domainText;
+      $('vertAsym').textContent = verticals.length>0 ? verticals.map(r=>`x=${formatNumber(r)}`).join(', ') : 'Ninguna';
+      $('horizAsym').textContent = horizObliqueText;
+      $('holes').textContent = holes.length>0 ? holes.map(r=>`x=${formatNumber(r)}`).join(', ') : 'Ninguno';
+
+      // fill table html
+      const tableWrap = $('tableWrap');
+      let html = '<table><thead><tr><th>x</th><th>f(x)</th></tr></thead><tbody>';
+      for (let i=0;i<tableXs.length;i++){
+        const x = tableXs[i], y = tableYs[i];
+        html += `<tr><td>${formatNumber(x)}</td><td>${ y === null ? '<span class="danger">indefinido</span>' : formatNumber(y) }</td></tr>`;
+      }
+      html += '</tbody></table>';
+      tableWrap.innerHTML = html;
+
+      // show details
+      $('details').style.display = 'block';
+      $('summaryArea').textContent = 'Listo — resultados generados abajo.';
+
+      // draw chart
+      // convert xs to numeric labels (we'll use category scale and indices)
+      drawChart(xs, ys, holes, verticals, obliqueLine);
+
+    } catch (err) {
+      console.error(err);
+      $('summaryArea').innerHTML = '<span class="danger">Error al analizar la función.</span> Revisa el formato.';
+    }
+  }
+
+  // UI events
+  const input = $('functionInput');
+  $('analyzeBtn').addEventListener('click', () => {
+    const v = input.value.trim();
+    if (!v) {
+      $('summaryArea').innerHTML = '<span class="danger">Error:</span> La caja está vacía. Escribe la función antes de analizar.';
+      return;
+    }
+    analyze(v);
+  });
+
+  // Enter key
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      $('analyzeBtn').click();
+    }
+  });
+
+  // initial state: empty input (no default)
+  input.value = '';
+
+  // small util for debugging (expose)
+  window._analyze = analyze;
+
+})();
 </script>
+
 </body>
 </html>
