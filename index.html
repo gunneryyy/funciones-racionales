@@ -1,1 +1,75 @@
-Hello
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Function Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .example {
+      background: #eef3ff;
+      padding: 12px;
+      border-left: 4px solid #4a6cf7;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    .guide {
+      background: #fafafa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Function Analyzer</h1>
+
+    <!-- Example above input (NOT solved, just shown) -->
+    <div class="example">
+      <strong>Example:</strong> f(x) = (x^2 - 4) / (x - 2)
+    </div>
+
+    <!-- Input box completely EMPTY (no predefined function)-->
+    <input type="text" id="functionInput" placeholder="Enter a function here..." />
+
+    <!-- Guide below explaining how to write functions -->
+    <div class="guide">
+      <h3>How to enter functions correctly:</h3>
+      <ul>
+        <li>Use <strong>x</strong> as the variable.</li>
+        <li>Write powers like <strong>x^2</strong>, <strong>x^3</strong>, etc.</li>
+        <li>Group expressions using parentheses: <strong>(x^2 - 4)/(x - 2)</strong>.</li>
+        <li>Multiplication must be explicit: <strong>2*x</strong> instead of <strong>2x</strong>.</li>
+        <li>Use <strong>sqrt(x)</strong> for square roots and <strong>ln(x)</strong> for natural log.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
