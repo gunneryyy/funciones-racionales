@@ -1,258 +1,147 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Funciones Racionales</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-        }
-        h2 { margin-top: 30px; }
-        input {
-            width: 100%;
-            padding: 10px;
-            font-size: 18px;
-            margin-top: 5px;
-            margin-bottom: 12px;
-        }
-        button {
-            padding: 10px 18px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #2b6cb0;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        .result-box, .graph-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 7px;
-            text-align: center;
-        }
-        th { background: #eee; }
-        .indeterminado { color: red; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Funciones Racionales</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f4f4f4;
+}
+#contenedor {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+input, button {
+  padding: 10px;
+  font-size: 16px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+td, th {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+canvas {
+  margin-top: 20px;
+}
+.subtitulo {
+  font-weight: bold;
+  margin-top: 20px;
+}
+</style>
 </head>
 
 <body>
-<div class="container">
+<div id="contenedor">
+<h2>Funciones Racionales</h2>
 
-    <h1>Calculadora de Funciones Racionales</h1>
+<input id="funcion" placeholder="Ingresa una función. Ej: (x^2-4)/(x-2)" style="width:70%">
+<button onclick="procesar()">Resolver</button>
 
-    <p><strong>Ejemplo:</strong> (x² - 4) / (x - 2)</p>
-
-    <label for="funcion"><strong>Ingresa tu función racional:</strong></label>
-    <input id="funcion" placeholder="Ejemplo: (x^2 - 4) / (x - 2)" />
-
-    <button onclick="procesar()">Calcular</button>
-
-    <p style="margin-top:10px;"><em>Guía rápida: Usa ^ para potencias, paréntesis para agrupar y x como variable.</em></p>
-
-    <div id="resultados" class="result-box"></div>
-
-    <div class="graph-box">
-        <canvas id="grafica" height="260"></canvas>
-    </div>
+<div id="info"></div>
+<canvas id="grafica" height="350"></canvas>
+<div id="tabla"></div>
 
 </div>
 
 <script>
-// --- Redondeo a máximo 2 decimales ---
-function r2(x) {
-    if (typeof x !== "number" || !isFinite(x)) return x;
-    return Math.round(x * 100) / 100;
+function red2(n){
+  return Math.round(n * 100) / 100;
 }
 
-// --- Detecta si un número requiere más de 2 decimales ---
-function tieneMuchosDecimales(n) {
-    if (!isFinite(n)) return true;
-    let s = n.toString();
-    return s.includes(".") && s.split(".")[1].length > 2;
+function procesar(){
+  const expr = document.getElementById("funcion").value;
+  if(!expr){ return; }
+
+  let f = x => {
+    try{
+      return math.evaluate(expr, {x:x});
+    }catch{ return NaN; }
+  };
+
+  let puntosX = [];
+  let puntosY = [];
+  let limites = {xmin: -10, xmax: 10};
+
+  for(let x=-10; x<=10; x+=0.1){
+    const y = f(x);
+    if(!isNaN(y) && isFinite(y)){
+      puntosX.push(x);
+      puntosY.push(y);
+    }
+  }
+
+  if(puntosY.length > 0){
+    let minY = Math.min(...puntosY);
+    let maxY = Math.max(...puntosY);
+    limites.ymin = minY;
+    limites.ymax = maxY;
+  } else {
+    limites.ymin = -10;
+    limites.ymax = 10;
+  }
+
+  let xvals = [];
+  let step = 20;
+  for(let v=limites.xmin; v<=limites.xmax; v+=step){
+    xvals.push(red2(v));
+  }
+
+  let tablaHTML = "<h3 class='subtitulo'>Tabla de Valores</h3>";
+  tablaHTML += "<table><tr><th>x</th><th>f(x)</th></tr>";
+
+  xvals.forEach(x=>{
+    let y = f(x);
+    tablaHTML += `<tr><td>${x}</td><td>${isFinite(y) ? red2(y) : "—"}</td></tr>`;
+  });
+
+  tablaHTML += "</table>";
+  document.getElementById("tabla").innerHTML = tablaHTML;
+
+  const ctx = document.getElementById("grafica").getContext("2d");
+  if(window.miGrafica){ window.miGrafica.destroy(); }
+
+  window.miGrafica = new Chart(ctx,{
+    type:"line",
+    data:{
+      labels:puntosX.map(x=>red2(x)),
+      datasets:[{
+        data:puntosY,
+        borderWidth:2,
+        fill:false,
+        pointRadius:0
+      }]
+    },
+    options:{
+      responsive:true,
+      scales:{
+        x:{min:limites.xmin, max:limites.xmax},
+        y:{min:limites.ymin, max:limites.ymax}
+      }
+    }
+  });
+
+  let rangoInfo = "";
+  if(isFinite(limites.ymin) && isFinite(limites.ymax)){
+    rangoInfo = `<h3 class='subtitulo'>Rango Aproximado</h3>
+                 <div>≈ [ ${red2(limites.ymin)} , ${red2(limites.ymax)} ]</div>`;
+  }
+
+  document.getElementById("info").innerHTML = rangoInfo;
 }
 
-// --- Procesar función ---
-function procesar() {
-    const entrada = document.getElementById("funcion").value.trim();
-    const R = document.getElementById("resultados");
-    if (entrada === "") {
-        R.innerHTML = "<p>Ingresa una función.</p>";
-        return;
-    }
-
-    let expr;
-    try {
-        expr = math.parse(entrada);
-    } catch {
-        R.innerHTML = "<p>Error: función inválida.</p>";
-        return;
-    }
-
-    let f;
-    try {
-        f = expr.compile();
-    } catch {
-        R.innerHTML = "<p>Error procesando la función.</p>";
-        return;
-    }
-
-    // Evaluador seguro
-    function evalF(x) {
-        try {
-            return f.evaluate({ x });
-        } catch {
-            return NaN;
-        }
-    }
-
-    // --- DOMINIO, HUECOS y ASÍNTOTAS ---
-    let huecos = [];
-    let posiblesAsintotasVerticales = [];
-
-    // Buscamos ceros del denominador escaneando
-    for (let x = -100; x <= 100; x += 0.1) {
-        let val = evalF(x);
-        if (!isFinite(val)) {
-            let aproximado = r2(x);
-            if (!huecos.includes(aproximado)) huecos.push(aproximado);
-        }
-    }
-
-    let dominio = "ℝ \\ { " + huecos.join(" , ") + " }";
-
-    // --- ASÍNTOTA HORIZONTAL U OBLICUA ---
-    // Intentamos aproximar límite cuando x→∞
-    let v1 = evalF(100000);
-    let v2 = evalF(120000);
-
-    let tipoAsint = "";
-    if (isFinite(v1) && isFinite(v2) && Math.abs(v1 - v2) < 1) {
-        tipoAsint = "y = " + r2((v1 + v2) / 2);
-    } else {
-        // Aproximar recta oblicua por regresión
-        let xs = [];
-        let ys = [];
-        for (let i = 50000; i <= 60000; i += 2000) {
-            let y = evalF(i);
-            if (isFinite(y)) {
-                xs.push(i);
-                ys.push(y);
-            }
-        }
-        if (xs.length >= 2) {
-            let n = xs.length;
-            let sumX = xs.reduce((a, b) => a + b, 0);
-            let sumY = ys.reduce((a, b) => a + b, 0);
-            let sumXY = xs.map((e, i) => e * ys[i]).reduce((a, b) => a + b, 0);
-            let sumX2 = xs.map(e => e * e).reduce((a, b) => a + b, 0);
-
-            let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            let b = (sumY - m * sumX) / n;
-
-            m = r2(m);
-            b = r2(b);
-            tipoAsint = "y = " + m + "x + " + b;
-        }
-    }
-
-    // --- RANGO (solo si posible y ≤ 2 decimales) ---
-    let posiblesValores = [];
-    for (let x = -50; x <= 50; x += 0.25) {
-        let y = evalF(x);
-        if (isFinite(y)) posiblesValores.push(y);
-    }
-
-    let minY = Math.min(...posiblesValores);
-    let maxY = Math.max(...posiblesValores);
-
-    let mostrarRango = !(tieneMuchosDecimales(minY) || tieneMuchosDecimales(maxY));
-
-    // --- TABLA ---
-    let tabla = "<table><tr><th>x</th><th>f(x)</th></tr>";
-    for (let i = -3; i <= 5; i++) {
-        let v = evalF(i);
-        if (!isFinite(v)) {
-            tabla += `<tr><td>${i}</td><td class="indeterminado">indefinido</td></tr>`;
-        } else {
-            tabla += `<tr><td>${i}</td><td>${r2(v)}</td></tr>`;
-        }
-    }
-    tabla += "</table>";
-
-    // --- MOSTRAR RESULTADOS ---
-    let html = "";
-
-    html += "<h2>Resultados</h2>";
-
-    html += `<p><strong>Dominio:</strong> ${dominio}</p>`;
-
-    html += `<p><strong>Asíntotas:</strong> ${tipoAsint || "Ninguna"}</p>`;
-
-    if (huecos.length > 0)
-        html += `<p><strong>Huecos:</strong> x = ${huecos.join(", ")}</p>`;
-
-    if (mostrarRango) {
-        let rangoMat = `( ${r2(minY)}, ${r2(maxY)} )`;
-        let rangoText = `Valores entre ${r2(minY)} y ${r2(maxY)}`;
-        html += `<p><strong>Rango:</strong> ${rangoMat} — ${rangoText}</p>`;
-    }
-
-    html += "<h3>Tabla de valores</h3>";
-    html += tabla;
-
-    R.innerHTML = html;
-
-    // --- GRÁFICA ---
-    let ctx = document.getElementById("grafica").getContext("2d");
-
-    if (window.miGrafica) window.miGrafica.destroy();
-
-    let puntos = [];
-    for (let x = -10; x <= 10; x += 0.1) {
-        let y = evalF(x);
-        if (isFinite(y)) puntos.push({ x, y });
-    }
-
-    window.miGrafica = new Chart(ctx, {
-        type: "line",
-        data: {
-            datasets: [{
-                label: "f(x)",
-                data: puntos,
-                parsing: false,
-                borderWidth: 2,
-                pointRadius: 0,
-            }]
-        },
-        options: {
-            scales: {
-                x: { type: "linear" },
-                y: { type: "linear" }
-            }
-        }
-    });
-}
 </script>
-
 </body>
 </html>
